@@ -8,6 +8,8 @@
 
 This folder is the **ai-chat-portfolio** Next.js app. It was scaffolded with **pnpm**, **Next.js 16** (App Router), **React 19**, **Tailwind CSS 4**, and **ESLint**. Phase 1 dependencies **`ai`** (v6) and **`@ai-sdk/anthropic`** (v3) are already in `package.json`. **`.env.example`** and **`.env.local`** (placeholder key) exist; put your real key only in `.env.local`.
 
+**Phase 2 is implemented:** [`app/api/chat/route.ts`](app/api/chat/route.ts) defines `POST /api/chat` using `streamText`, `maxOutputTokens: 1024`, and `toUIMessageStreamResponse()`. The model id matches a current Anthropic Sonnet release (see Phase 2 below). If you are new to the codebase, read that file next, then continue from Phase 3.
+
 If you cloned this repo, **skip Phase 1.1–1.2** unless you are reproducing the setup from scratch. Use **`pnpm dev`** / **`pnpm run build`** (not `npm`) so the lockfile stays consistent.
 
 Implementation details for chat (`streamText`, streaming `Response`, `useChat`) change between **AI SDK** major versions. This repo pins **v6** — when Phases 2–3 diverge from the snippets below, follow the official docs: [AI SDK](https://ai-sdk.dev/docs).
@@ -43,11 +45,11 @@ Each phase of the build teaches a specific AI concept. Don't skip ahead — the 
 | Phase | You Build | AI Concept You Learn |
 |-------|-----------|----------------------|
 | Phase 1: Setup | Project scaffold + env vars | How API keys work, what the Anthropic SDK is |
-| Phase 2: API Route | POST /api/chat endpoint | How LLMs receive input, what tokens are, what max_tokens means |
-| Phase 3: Streaming | Real-time streamed responses | Why streaming matters UX-wise, how SSE works |
-| Phase 4: History | Multi-turn conversation | What context window is, why history = cost |
-| Phase 5: System Prompt | Persona / behaviour control | Prompt engineering basics — the most important AI skill |
-| Phase 6: Polish | Markdown, copy button, dark mode | How to productionise AI output for real users |
+| Phase 2: API Route | POST /api/chat endpoint | How LLMs receive input, tokens, **`maxOutputTokens`**, system prompt as behaviour control |
+| Phase 3: Chat UI | Main page + `useChat` + streaming to the browser | Multi-turn history (client-held), SSE-style streaming UX |
+| Phase 4: Suggested prompts | Empty-state starter buttons | Guiding users without extra model calls |
+| Phase 5: Polish | Markdown, copy, new chat | Production-style presentation of model output |
+| Phase 6: Components | Optional refactor into `components/*` | Code organisation for portfolio review |
 | Phase 7: Deploy | Live Vercel URL | Env var management, production API key safety |
 
 ---
@@ -72,9 +74,9 @@ Tokens are the unit of text LLMs work with. A token is roughly 3/4 of a word in 
 Why this matters for you:
 - **Cost** — you pay per token (input + output)
 - **Context window** — Claude has a maximum number of tokens it can process per request
-- **max_tokens** — the cap you set on how long the response can be
+- **Output token cap** — the cap you set on how long the model’s reply can be (in **AI SDK v6** this is `maxOutputTokens` on `streamText` / `generateText`)
 
-> 💡 For this project: set `max_tokens: 1024`. Enough for detailed advice, not wasteful.
+> 💡 For this project: set **`maxOutputTokens: 1024`** in the API route. Enough for detailed advice, not wasteful.
 
 ### 3.3 The Messages Array
 
@@ -109,7 +111,7 @@ Without streaming: the user waits for the entire response to be generated, then 
 | **Framework** | Next.js 16+ (App Router) | API routes = backend built-in. No separate server needed. |
 | **Package manager** | pnpm | Fast installs, strict `node_modules` layout; this repo uses a `pnpm-lock.yaml`. |
 | **AI SDK** | `@ai-sdk/anthropic` + `ai` (Vercel AI SDK v6) | Streaming, chat UI patterns, and provider calls — check docs for v6 APIs |
-| **Model** | `claude-3-5-sonnet-20241022` | Best balance of speed, quality, and cost for a portfolio chatbot |
+| **Model** | `claude-haiku-4-5-20251001` (see `app/api/chat/route.ts`) | Sonnet-class model supported by **`@ai-sdk/anthropic` v3**; Anthropic periodically retires older model strings — if calls fail, pick a current id from [Anthropic’s docs](https://docs.anthropic.com) or your installed package typings |
 | **Styling** | Tailwind CSS | Fast, consistent, already in your Next.js setup |
 | **State** | `useChat` hook (in-memory) | Manages message history automatically |
 | **Deployment** | Vercel | Zero config for Next.js. Free tier works. Live URL for portfolio. |
@@ -206,9 +208,9 @@ git push -u origin main
 
 **AI SDK v6:** Older articles use `maxTokens` and `toDataStreamResponse()`. In **`ai` v6**, prefer **`maxOutputTokens`** and the streaming **`Response`** helpers described in the [AI SDK reference](https://ai-sdk.dev/docs) (names differ by pattern: UI message stream vs plain text stream). The snippet below keeps the **original teaching shape**; adjust field and method names to match your installed major version.
 
-This is where your Next.js backend calls the Claude API. Read the comments in the code — they explain each decision.
+This is where your Next.js backend calls the Claude API. The snippet and callouts below explain each decision.
 
-**Create `app/api/chat/route.ts`**
+**`app/api/chat/route.ts` (already in this repo — reproduce from scratch if learning)**
 
 ```ts
 import { anthropic } from '@ai-sdk/anthropic';
@@ -219,7 +221,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const result = streamText({
-      model: anthropic('claude-3-5-sonnet-20241022'),
+      model: anthropic('claude-sonnet-4-20250514'),
       system: `You are a personal branding coach for software engineers.
         Help with LinkedIn optimization, portfolio presentation,
         GitHub profiles, resume tailoring, and thought leadership.
@@ -238,6 +240,8 @@ export async function POST(req: Request) {
   }
 }
 ```
+
+> **Model id:** Older tutorials used `claude-haiku-4-5-20251001`. Anthropic may reject deprecated ids — use a **current** Sonnet (or Haiku) string that appears in **`@ai-sdk/anthropic`** types or Anthropic’s model list, then keep this doc in sync when you change it.
 
 > 💡 **Learning checkpoint:** Why do we send `messages` (array) and not just the latest user message? Because Claude has no memory — the full history is context. Remove history and Claude won't know what was said 2 messages ago.
 
@@ -452,6 +456,7 @@ Building it is half the work. Showcasing it well is the other half.
 | `git push` → **No configured push destination** | Add a remote: `git remote add origin <repo-url>` then `git push -u origin main` (see Phase 1.5). |
 | **Another next dev server is already running** / port conflict | Only one `next dev` per project directory. Stop the other terminal or `taskkill /PID <pid> /F` (Windows) / `kill <pid>` (macOS/Linux). |
 | `ANTHROPIC_API_KEY` not found | Ensure `.env.local` exists in project root (not `src/`). Restart dev server after creating it. |
+| Stream or logs show **invalid / unknown model** (e.g. old `claude-3-5-sonnet-*`) | Update `anthropic('…')` in [`app/api/chat/route.ts`](app/api/chat/route.ts) to a **supported** model id from Anthropic or your installed `@ai-sdk/anthropic` typings. |
 | Streaming not working | Confirm the API route returns a streaming **`Response`** compatible with your client transport (see AI SDK v6 docs). Check the chat hook targets `/api/chat`. |
 | Messages not persisting on refresh | Expected — in-memory only for Stage 1. Intentional for simplicity. |
 | CORS errors | Next.js API routes are same-origin. Only relevant if frontend and backend are on separate domains. |
