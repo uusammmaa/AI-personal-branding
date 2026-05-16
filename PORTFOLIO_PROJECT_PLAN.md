@@ -8,7 +8,7 @@
 
 This folder is the **ai-chat-portfolio** Next.js app. It was scaffolded with **pnpm**, **Next.js 16** (App Router), **React 19**, **Tailwind CSS 4**, and **ESLint**. Phase 1 dependencies **`ai`** (v6) and **`@ai-sdk/anthropic`** (v3) are already in `package.json`. **`.env.example`** and **`.env.local`** (placeholder key) exist; put your real key only in `.env.local`.
 
-**Phase 2 is implemented:** [`app/api/chat/route.ts`](app/api/chat/route.ts) defines `POST /api/chat` using `streamText`, `maxOutputTokens: 1024`, and `toUIMessageStreamResponse()`. The model id matches a current Anthropic Sonnet release (see Phase 2 below). If you are new to the codebase, read that file next, then continue from Phase 3.
+**Phases 2–3 are implemented:** [`app/api/chat/route.ts`](app/api/chat/route.ts) defines `POST /api/chat` using `streamText`, `convertToModelMessages`, `maxOutputTokens: 1024`, and `toUIMessageStreamResponse()`. [`app/page.tsx`](app/page.tsx) is a `'use client'` chat UI using the v6 `useChat` hook from `@ai-sdk/react`, with `sendMessage`, `status`, `m.parts`-based rendering, auto-scroll, and a "New Chat" button. If you are new to the codebase, read those two files, then continue from Phase 4.
 
 If you cloned this repo, **skip Phase 1.1–1.2** unless you are reproducing the setup from scratch. Use **`pnpm dev`** / **`pnpm run build`** (not `npm`) so the lockfile stays consistent.
 
@@ -111,7 +111,7 @@ Without streaming: the user waits for the entire response to be generated, then 
 | **Framework** | Next.js 16+ (App Router) | API routes = backend built-in. No separate server needed. |
 | **Package manager** | pnpm | Fast installs, strict `node_modules` layout; this repo uses a `pnpm-lock.yaml`. |
 | **AI SDK** | `@ai-sdk/anthropic` + `ai` (Vercel AI SDK v6) | Streaming, chat UI patterns, and provider calls — check docs for v6 APIs |
-| **Model** | `claude-haiku-4-5-20251001` (see `app/api/chat/route.ts`) | Sonnet-class model supported by **`@ai-sdk/anthropic` v3**; Anthropic periodically retires older model strings — if calls fail, pick a current id from [Anthropic’s docs](https://docs.anthropic.com) or your installed package typings |
+| **Model** | `claude-haiku-4-5-20251001` (see `app/api/chat/route.ts`) | Fast and cost-effective Haiku model supported by **`@ai-sdk/anthropic` v3**; Anthropic periodically retires older model strings — if calls fail, pick a current id from [Anthropic’s docs](https://docs.anthropic.com) or your installed package typings |
 | **Styling** | Tailwind CSS | Fast, consistent, already in your Next.js setup |
 | **State** | `useChat` hook (in-memory) | Manages message history automatically |
 | **Deployment** | Vercel | Zero config for Next.js. Free tier works. Live URL for portfolio. |
@@ -214,19 +214,19 @@ This is where your Next.js backend calls the Claude API. The snippet and callout
 
 ```ts
 import { anthropic } from '@ai-sdk/anthropic';
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
     const result = streamText({
-      model: anthropic('claude-sonnet-4-20250514'),
+      model: anthropic('claude-haiku-4-5-20251001'),
       system: `You are a personal branding coach for software engineers.
         Help with LinkedIn optimization, portfolio presentation,
         GitHub profiles, resume tailoring, and thought leadership.
         Be concise, actionable, and specific to software engineering.`,
-      messages,
+      messages: await convertToModelMessages(messages),
       maxOutputTokens: 1024,
     });
 
@@ -241,7 +241,9 @@ export async function POST(req: Request) {
 }
 ```
 
-> **Model id:** Older tutorials used `claude-haiku-4-5-20251001`. Anthropic may reject deprecated ids — use a **current** Sonnet (or Haiku) string that appears in **`@ai-sdk/anthropic`** types or Anthropic’s model list, then keep this doc in sync when you change it.
+> **`convertToModelMessages`:** The v6 `useChat` transport sends `UIMessage[]` (with `parts`) to the API, but `streamText` expects `ModelMessage[]`. This function bridges the two formats.
+
+> **Model id:** Anthropic may reject deprecated ids — use a **current** Sonnet (or Haiku) string that appears in **`@ai-sdk/anthropic`** types or Anthropic’s model list, then keep this doc in sync when you change it.
 
 > 💡 **Learning checkpoint:** Why do we send `messages` (array) and not just the latest user message? Because Claude has no memory — the full history is context. Remove history and Claude won't know what was said 2 messages ago.
 
@@ -249,45 +251,77 @@ export async function POST(req: Request) {
 
 ### Phase 3: Chat UI
 
-**AI SDK v6:** Chat hooks live in **`@ai-sdk/react`** (`pnpm add @ai-sdk/react`). The example below still imports **`ai/react`**, which applied to older AI SDK majors. Rebuild this page using the current [**useChat** / chatbot guide](https://ai-sdk.dev/docs) so imports, message shape, and handlers match v6.
+**`app/page.tsx` (already in this repo — reproduce from scratch if learning)**
 
-**Create `app/page.tsx`**
+The `useChat` hook manages messages state, sends requests via the default transport (`POST /api/chat`), handles streaming, and updates the UI. Study it.
 
-The `useChat` hook is doing the heavy lifting here. It manages messages state, sends requests, handles streaming, and updates the UI. Study it.
+**v6 API differences from older tutorials:** The v6 `useChat` (from `@ai-sdk/react`) does **not** provide `input`, `handleInputChange`, `handleSubmit`, `isLoading`, or `append`. Instead:
+- Manage input state yourself with `useState`
+- Send messages with `sendMessage({ text })`
+- Derive loading from `status` (`'submitted'` or `'streaming'`)
+- Render message content via `m.parts` (array of `{ type: 'text', text }` etc.), not `m.content`
+- The default API path is `/api/chat` — no need to pass `{ api: '/api/chat' }`
 
 ```tsx
 'use client';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
+import { useRef, useEffect, useState, type FormEvent } from 'react';
 
 export default function ChatPage() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, append } = useChat({
-    api: '/api/chat',
-  });
+  const { messages, sendMessage, status, setMessages } = useChat();
+  const [input, setInput] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const isLoading = status === 'submitted' || status === 'streaming';
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || isLoading) return;
+    setInput('');
+    sendMessage({ text });
+  }
 
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Personal Branding Assistant</h1>
+      <header className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Personal Branding Assistant</h1>
+        {messages.length > 0 && (
+          <button type="button" onClick={() => setMessages([])}>New Chat</button>
+        )}
+      </header>
 
       <div className="flex-1 overflow-y-auto space-y-4 mb-4">
         {messages.map((m) => (
           <div key={m.id} className={`p-4 rounded-lg ${
             m.role === 'user' ? 'bg-blue-100 ml-8' : 'bg-gray-100 mr-8'
           }`}>
-            <span className="font-semibold text-sm">{m.role}:</span>
-            <p className="mt-1 whitespace-pre-wrap">{m.content}</p>
+            <span className="font-semibold text-sm">
+              {m.role === 'user' ? 'You' : 'Assistant'}
+            </span>
+            <div className="mt-1 whitespace-pre-wrap">
+              {m.parts.filter(p => p.type === 'text').map((p, i) => (
+                <span key={i}>{p.text}</span>
+              ))}
+            </div>
           </div>
         ))}
+        <div ref={bottomRef} />
       </div>
 
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           value={input}
-          onChange={handleInputChange}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about your personal brand..."
           className="flex-1 p-3 border rounded-lg"
           disabled={isLoading}
         />
-        <button type="submit" disabled={isLoading}
+        <button type="submit" disabled={isLoading || !input.trim()}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg">
           Send
         </button>
@@ -318,7 +352,7 @@ const SUGGESTED_PROMPTS = [
     {SUGGESTED_PROMPTS.map((prompt) => (
       <button
         key={prompt}
-        onClick={() => append({ role: 'user', content: prompt })}
+        onClick={() => sendMessage({ text: prompt })}
         className="p-3 text-left border rounded-lg hover:bg-gray-50"
       >
         {prompt}
@@ -341,8 +375,10 @@ pnpm add react-markdown
 ```tsx
 import ReactMarkdown from 'react-markdown';
 
-// Replace <p>{m.content}</p> with:
-<ReactMarkdown className="prose">{m.content}</ReactMarkdown>
+// In the parts rendering, wrap text in ReactMarkdown instead of a plain <span>:
+{m.parts.filter(p => p.type === 'text').map((p, i) => (
+  <ReactMarkdown key={i} className="prose dark:prose-invert">{p.text}</ReactMarkdown>
+))}
 ```
 
 **Copy-to-clipboard button (assistant messages only)**
@@ -355,7 +391,8 @@ const copy = (text: string) => navigator.clipboard.writeText(text);
 **New Chat button**
 
 ```tsx
-const { messages, setMessages, ... } = useChat({ api: '/api/chat' });
+// Already implemented in Phase 3's page.tsx:
+const { messages, setMessages, ... } = useChat();
 <button onClick={() => setMessages([])}>New Chat</button>
 ```
 

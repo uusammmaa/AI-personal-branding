@@ -1,5 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
+import { streamText, convertToModelMessages } from "ai";
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
         Help with LinkedIn optimization, portfolio presentation,
         GitHub profiles, resume tailoring, and thought leadership.
         Be concise, actionable, and specific to software engineering.`,
-      messages,
+      messages: await convertToModelMessages(messages),
       maxOutputTokens: 1024,
     });
 
