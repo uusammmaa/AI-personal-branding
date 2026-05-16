@@ -8,11 +8,11 @@
 
 This folder is the **ai-chat-portfolio** Next.js app. It was scaffolded with **pnpm**, **Next.js 16** (App Router), **React 19**, **Tailwind CSS 4**, and **ESLint**. Phase 1 dependencies **`ai`** (v6) and **`@ai-sdk/anthropic`** (v3) are already in `package.json`. **`.env.example`** and **`.env.local`** (placeholder key) exist; put your real key only in `.env.local`.
 
-**Phases 2–3 are implemented:** [`app/api/chat/route.ts`](app/api/chat/route.ts) defines `POST /api/chat` using `streamText`, `convertToModelMessages`, `maxOutputTokens: 1024`, and `toUIMessageStreamResponse()`. [`app/page.tsx`](app/page.tsx) is a `'use client'` chat UI using the v6 `useChat` hook from `@ai-sdk/react`, with `sendMessage`, `status`, `m.parts`-based rendering, auto-scroll, and a "New Chat" button. If you are new to the codebase, read those two files, then continue from Phase 4.
+**Phases 2–4 are implemented:** [`app/api/chat/route.ts`](app/api/chat/route.ts) defines `POST /api/chat` using `streamText`, `convertToModelMessages`, `maxOutputTokens: 1024`, and `toUIMessageStreamResponse()`. [`app/page.tsx`](app/page.tsx) is a `'use client'` chat UI using the v6 `useChat` hook from `@ai-sdk/react`, with `sendMessage`, `status`, `m.parts`-based rendering, auto-scroll, a **multiline `<textarea>`** composer (**Enter** sends, **Shift+Enter** newline; respects `isComposing` for IME), dark-mode–aware Tailwind, a short **“Thinking…”** placeholder while the assistant has not started streaming, **Phase 4 suggested prompts** when `messages.length === 0`, and a **New Chat** button. If you are new to the codebase, read those two files, then continue from **Phase 5**.
 
 If you cloned this repo, **skip Phase 1.1–1.2** unless you are reproducing the setup from scratch. Use **`pnpm dev`** / **`pnpm run build`** (not `npm`) so the lockfile stays consistent.
 
-Implementation details for chat (`streamText`, streaming `Response`, `useChat`) change between **AI SDK** major versions. This repo pins **v6** — when Phases 2–3 diverge from the snippets below, follow the official docs: [AI SDK](https://ai-sdk.dev/docs).
+Implementation details for chat (`streamText`, streaming `Response`, `useChat`) change between **AI SDK** major versions. This repo pins **v6** — when the **snippets below** diverge from your installed major version or from the checked-in files, follow the official docs: [AI SDK](https://ai-sdk.dev/docs).
 
 ---
 
@@ -48,7 +48,7 @@ Each phase of the build teaches a specific AI concept. Don't skip ahead — the 
 | Phase 2: API Route | POST /api/chat endpoint | How LLMs receive input, tokens, **`maxOutputTokens`**, system prompt as behaviour control |
 | Phase 3: Chat UI | Main page + `useChat` + streaming to the browser | Multi-turn history (client-held), SSE-style streaming UX |
 | Phase 4: Suggested prompts | Empty-state starter buttons | Guiding users without extra model calls |
-| Phase 5: Polish | Markdown, copy, new chat | Production-style presentation of model output |
+| Phase 5: Polish | Markdown, copy (New Chat already in repo) | Production-style presentation of model output |
 | Phase 6: Components | Optional refactor into `components/*` | Code organisation for portfolio review |
 | Phase 7: Deploy | Live Vercel URL | Env var management, production API key safety |
 
@@ -262,6 +262,8 @@ The `useChat` hook manages messages state, sends requests via the default transp
 - Render message content via `m.parts` (array of `{ type: 'text', text }` etc.), not `m.content`
 - The default API path is `/api/chat` — no need to pass `{ api: '/api/chat' }`
 
+**Checked-in `app/page.tsx` (beyond this minimal snippet):** multiline **`<textarea>`** with shared `submitMessage()` from **form `onSubmit`** and **`onKeyDown`** (**Enter** = send if not composing; **Shift+Enter** = newline), **`rows` / `resize-y` / `max-h-*`**, **`items-end`** on the form so **Send** aligns with the composer, **dark:** Tailwind on bubbles and inputs, **suggested prompts** when the thread is empty (see Phase 4), and a **“Thinking…”** row when `isLoading` and the last message is not yet from the assistant.
+
 ```tsx
 'use client';
 import { useChat } from '@ai-sdk/react';
@@ -335,7 +337,9 @@ export default function ChatPage() {
 
 ### Phase 4: Suggested Prompts (Empty State)
 
-When the chat is empty, show starter prompts. This improves UX and guides first-time users — important for a portfolio demo.
+**Already implemented in this repo** in [`app/page.tsx`](app/page.tsx). When the chat is empty, show starter prompts. This improves UX and guides first-time users — important for a portfolio demo. The live code uses `type="button"`, `disabled={isLoading}` on each chip, and `dark:` styles so prompts match the rest of the UI.
+
+Minimal teaching shape (reproduce if learning from scratch):
 
 ```tsx
 const SUGGESTED_PROMPTS = [
@@ -391,7 +395,7 @@ const copy = (text: string) => navigator.clipboard.writeText(text);
 **New Chat button**
 
 ```tsx
-// Already implemented in Phase 3's page.tsx:
+// Already implemented in app/page.tsx (Phases 3–4):
 const { messages, setMessages, ... } = useChat();
 <button onClick={() => setMessages([])}>New Chat</button>
 ```
@@ -406,7 +410,7 @@ Once Phase 5 works, refactor into components. This shows code organisation skill
 
 - `components/ChatMessage.tsx` — single message bubble with role styling and copy button
 - `components/MessageList.tsx` — scrollable list of messages + suggested prompts empty state
-- `components/ChatInput.tsx` — input form with send button and loading state
+- `components/ChatInput.tsx` — multiline composer (`textarea`) + send button + loading / keyboard behaviour
 
 ---
 
@@ -450,7 +454,7 @@ Trigger a new deployment after adding the env var. The env var is not available 
 | File | Purpose |
 |------|---------|
 | `app/api/chat/route.ts` | Chat API endpoint — calls Claude with streaming |
-| `app/page.tsx` | Main chat page with `useChat` hook |
+| `app/page.tsx` | Main chat page with `useChat`, multiline composer, empty-state prompts |
 | `components/ChatMessage.tsx` | Single message bubble (after refactor) |
 | `components/ChatInput.tsx` | Input form (after refactor) |
 | `components/MessageList.tsx` | Message list + empty state (after refactor) |

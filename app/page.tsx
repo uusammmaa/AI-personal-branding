@@ -1,7 +1,20 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useRef, useEffect, useState, type FormEvent } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
+
+const SUGGESTED_PROMPTS = [
+  "Help me write a compelling LinkedIn headline",
+  "Review my GitHub profile and suggest improvements",
+  "Suggest 3 portfolio project ideas to showcase my skills",
+  "How do I position myself for remote senior dev roles?",
+];
 
 export default function ChatPage() {
   const { messages, sendMessage, status, setMessages } = useChat();
@@ -14,12 +27,22 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  function submitMessage() {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput("");
     sendMessage({ text });
+  }
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    submitMessage();
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) return;
+    e.preventDefault();
+    submitMessage();
   }
 
   return (
@@ -38,6 +61,25 @@ export default function ChatPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+        {messages.length === 0 && (
+          <div className="flex flex-col gap-2 mt-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Try asking:
+            </p>
+            {SUGGESTED_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                disabled={isLoading}
+                onClick={() => sendMessage({ text: prompt })}
+                className="p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        )}
+
         {messages.map((m) => (
           <div
             key={m.id}
@@ -70,12 +112,14 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <input
+      <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+        <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about your personal brand..."
-          className="flex-1 p-3 border rounded-lg bg-white dark:bg-gray-900 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onKeyDown={handleKeyDown}
+          placeholder="Ask about your personal brand... (Enter to send, Shift+Enter for new line)"
+          rows={3}
+          className="flex-1 min-h-18 max-h-48 resize-y py-3 px-3 border rounded-lg bg-white dark:bg-gray-900 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           disabled={isLoading}
         />
         <button
