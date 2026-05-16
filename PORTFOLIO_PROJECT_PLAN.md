@@ -4,11 +4,11 @@
 
 ---
 
-## This repository (starter status)
+## This repository (current status)
 
-This folder is the **ai-chat-portfolio** Next.js app. It was scaffolded with **pnpm**, **Next.js 16** (App Router), **React 19**, **Tailwind CSS 4**, and **ESLint**. Phase 1 dependencies **`ai`** (v6) and **`@ai-sdk/anthropic`** (v3) are already in `package.json`. **`.env.example`** and **`.env.local`** (placeholder key) exist; put your real key only in `.env.local`.
+This folder is the **ai-chat-portfolio** Next.js app. It was scaffolded with **pnpm**, **Next.js 16** (App Router), **React 19**, **Tailwind CSS 4**, and **ESLint**. Core dependencies **`ai`** (v6), **`@ai-sdk/anthropic`** (v3), **`@ai-sdk/react`**, **`react-markdown`**, and dev **`@tailwindcss/typography`** are in `package.json`. **`.env.example`** and **`.env.local`** (placeholder key) exist; put your real key only in `.env.local`.
 
-**Phases 2–4 are implemented:** [`app/api/chat/route.ts`](app/api/chat/route.ts) defines `POST /api/chat` using `streamText`, `convertToModelMessages`, `maxOutputTokens: 1024`, and `toUIMessageStreamResponse()`. [`app/page.tsx`](app/page.tsx) is a `'use client'` chat UI using the v6 `useChat` hook from `@ai-sdk/react`, with `sendMessage`, `status`, `m.parts`-based rendering, auto-scroll, a **multiline `<textarea>`** composer (**Enter** sends, **Shift+Enter** newline; respects `isComposing` for IME), dark-mode–aware Tailwind, a short **“Thinking…”** placeholder while the assistant has not started streaming, **Phase 4 suggested prompts** when `messages.length === 0`, and a **New Chat** button. If you are new to the codebase, read those two files, then continue from **Phase 5**.
+**Phases 2–5 are implemented:** [`app/api/chat/route.ts`](app/api/chat/route.ts) defines `POST /api/chat` using `streamText`, `convertToModelMessages`, **`maxOutputTokens: 1024`**, and `toUIMessageStreamResponse()`. [`app/page.tsx`](app/page.tsx) is a `'use client'` chat UI using the v6 `useChat` hook from `@ai-sdk/react`, with `sendMessage`, `status`, `m.parts`-based rendering, auto-scroll, a **multiline `<textarea>`** composer (**Enter** sends, **Shift+Enter** newline; respects `isComposing` for IME), dark-mode–aware Tailwind, a short **“Thinking…”** placeholder while the assistant has not started streaming, **Phase 4 suggested prompts** when `messages.length === 0`, a **New Chat** button, **Phase 5 markdown** for assistant replies only (user text stays plain), a **Copy** control per assistant message, and layout constraints so **fenced code scrolls inside the bubble** instead of stretching the page. [`app/globals.css`](app/globals.css) enables Tailwind Typography via **`@plugin "@tailwindcss/typography"`** for `prose` / `dark:prose-invert`. If you are new to the codebase, read **`app/api/chat/route.ts`**, **`app/page.tsx`**, and **`app/globals.css`**, then continue from **Phase 6** (optional refactor) or **Phase 7** (deploy).
 
 If you cloned this repo, **skip Phase 1.1–1.2** unless you are reproducing the setup from scratch. Use **`pnpm dev`** / **`pnpm run build`** (not `npm`) so the lockfile stays consistent.
 
@@ -48,7 +48,7 @@ Each phase of the build teaches a specific AI concept. Don't skip ahead — the 
 | Phase 2: API Route | POST /api/chat endpoint | How LLMs receive input, tokens, **`maxOutputTokens`**, system prompt as behaviour control |
 | Phase 3: Chat UI | Main page + `useChat` + streaming to the browser | Multi-turn history (client-held), SSE-style streaming UX |
 | Phase 4: Suggested prompts | Empty-state starter buttons | Guiding users without extra model calls |
-| Phase 5: Polish | Markdown, copy (New Chat already in repo) | Production-style presentation of model output |
+| Phase 5: Polish | Markdown, copy, code layout | Production-style presentation of model output; flex `min-w-0` + scrollable `pre` for wide code |
 | Phase 6: Components | Optional refactor into `components/*` | Code organisation for portfolio review |
 | Phase 7: Deploy | Live Vercel URL | Env var management, production API key safety |
 
@@ -76,7 +76,7 @@ Why this matters for you:
 - **Context window** — Claude has a maximum number of tokens it can process per request
 - **Output token cap** — the cap you set on how long the model’s reply can be (in **AI SDK v6** this is `maxOutputTokens` on `streamText` / `generateText`)
 
-> 💡 For this project: set **`maxOutputTokens: 1024`** in the API route. Enough for detailed advice, not wasteful.
+> 💡 **Teaching default:** **`maxOutputTokens: 1024`** in the API route is enough for short, coaching-style replies and keeps cost predictable. **This repo uses `1024` in [`app/api/chat/route.ts`](app/api/chat/route.ts).** If users ask for **long HTML/CSS documents** and answers cut off mid-tag, raise the cap (for example **4096** or **8192**) within the model’s documented output limit — output tokens are still bounded, but the model can finish larger artifacts.
 
 ### 3.3 The Messages Array
 
@@ -112,7 +112,8 @@ Without streaming: the user waits for the entire response to be generated, then 
 | **Package manager** | pnpm | Fast installs, strict `node_modules` layout; this repo uses a `pnpm-lock.yaml`. |
 | **AI SDK** | `@ai-sdk/anthropic` + `ai` (Vercel AI SDK v6) | Streaming, chat UI patterns, and provider calls — check docs for v6 APIs |
 | **Model** | `claude-haiku-4-5-20251001` (see `app/api/chat/route.ts`) | Fast and cost-effective Haiku model supported by **`@ai-sdk/anthropic` v3**; Anthropic periodically retires older model strings — if calls fail, pick a current id from [Anthropic’s docs](https://docs.anthropic.com) or your installed package typings |
-| **Styling** | Tailwind CSS | Fast, consistent, already in your Next.js setup |
+| **Styling** | Tailwind CSS + **`@tailwindcss/typography`** (`prose` in [`app/globals.css`](app/globals.css)) | Fast layout; typography plugin required for `prose` in Tailwind v4 |
+| **Assistant output** | **`react-markdown`** (see [`app/page.tsx`](app/page.tsx)) | Renders lists, code fences, and links from the model safely (no raw HTML by default) |
 | **State** | `useChat` hook (in-memory) | Manages message history automatically |
 | **Deployment** | Vercel | Zero config for Next.js. Free tier works. Live URL for portfolio. |
 
@@ -245,6 +246,8 @@ export async function POST(req: Request) {
 
 > **Model id:** Anthropic may reject deprecated ids — use a **current** Sonnet (or Haiku) string that appears in **`@ai-sdk/anthropic`** types or Anthropic’s model list, then keep this doc in sync when you change it.
 
+> **Output length:** The snippet uses **`maxOutputTokens: 1024`**. The checked-in repo matches that value; bump it when you need longer generated pages (see §3.2).
+
 > 💡 **Learning checkpoint:** Why do we send `messages` (array) and not just the latest user message? Because Claude has no memory — the full history is context. Remove history and Claude won't know what was said 2 messages ago.
 
 ---
@@ -262,7 +265,7 @@ The `useChat` hook manages messages state, sends requests via the default transp
 - Render message content via `m.parts` (array of `{ type: 'text', text }` etc.), not `m.content`
 - The default API path is `/api/chat` — no need to pass `{ api: '/api/chat' }`
 
-**Checked-in `app/page.tsx` (beyond this minimal snippet):** multiline **`<textarea>`** with shared `submitMessage()` from **form `onSubmit`** and **`onKeyDown`** (**Enter** = send if not composing; **Shift+Enter** = newline), **`rows` / `resize-y` / `max-h-*`**, **`items-end`** on the form so **Send** aligns with the composer, **dark:** Tailwind on bubbles and inputs, **suggested prompts** when the thread is empty (see Phase 4), and a **“Thinking…”** row when `isLoading` and the last message is not yet from the assistant.
+**Checked-in `app/page.tsx` (beyond this minimal snippet):** multiline **`<textarea>`** with shared `submitMessage()` from **form `onSubmit`** and **`onKeyDown`** (**Enter** = send if not composing; **Shift+Enter** = newline), **`rows` / `resize-y` / `max-h-*`**, **`items-end`** on the form so **Send** aligns with the composer, **dark:** Tailwind on bubbles and inputs, **suggested prompts** when the thread is empty (see Phase 4), a **“Thinking…”** row when `isLoading` and the last message is not yet from the assistant, plus **Phase 5** behaviour (assistant **markdown** via `react-markdown`, **Copy** on assistant bubbles, **`min-w-0` / `overflow-hidden`** on bubbles and scroll region so code blocks don’t break layout).
 
 ```tsx
 'use client';
@@ -370,34 +373,38 @@ const SUGGESTED_PROMPTS = [
 
 ### Phase 5: Polish
 
-**Markdown rendering**
+**Already implemented in this repo** — see [`app/page.tsx`](app/page.tsx) and [`app/globals.css`](app/globals.css).
+
+**Dependencies**
 
 ```bash
 pnpm add react-markdown
+pnpm add -D @tailwindcss/typography
 ```
+
+In **`app/globals.css`** (Tailwind v4), register typography next to the core import:
+
+```css
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+```
+
+**Markdown (assistant only)** — User messages stay **plain text** (`whitespace-pre-wrap`) so stray `*` or `` ` `` characters don’t turn into accidental markdown. Assistant `text` parts render through **`react-markdown`** inside a **`prose prose-sm … dark:prose-invert`** wrapper. A custom **`pre`** component wraps fenced code in a **`max-w-full min-w-0 overflow-x-auto`** container and an inner **`pre`** with **`min-w-full w-max`** so **long lines scroll inside the bubble** instead of widening the flex column (which needs **`min-w-0`** on the page shell, scroll area, and bubbles).
+
+**Copy-to-clipboard (assistant only)** — Join all `text` parts for `navigator.clipboard.writeText`, expose a header **Copy** button with **`aria-label="Copy message"`**, optional brief **Copied** feedback, and clear any timeout on unmount.
+
+**New Chat** — Still `setMessages([])` from `useChat()` (Phases 3–4).
+
+**Minimal teaching shape** (if reproducing from scratch without the layout extras):
 
 ```tsx
 import ReactMarkdown from 'react-markdown';
 
-// In the parts rendering, wrap text in ReactMarkdown instead of a plain <span>:
 {m.parts.filter(p => p.type === 'text').map((p, i) => (
-  <ReactMarkdown key={i} className="prose dark:prose-invert">{p.text}</ReactMarkdown>
+  <div key={i} className="prose dark:prose-invert">
+    <ReactMarkdown>{p.text}</ReactMarkdown>
+  </div>
 ))}
-```
-
-**Copy-to-clipboard button (assistant messages only)**
-
-```tsx
-const copy = (text: string) => navigator.clipboard.writeText(text);
-// Add a button next to each assistant message bubble
-```
-
-**New Chat button**
-
-```tsx
-// Already implemented in app/page.tsx (Phases 3–4):
-const { messages, setMessages, ... } = useChat();
-<button onClick={() => setMessages([])}>New Chat</button>
 ```
 
 > 💡 **Optional but impressive:** Add a token counter in the UI showing approximate token usage. Formula: total characters in all messages / 4. Shows Upwork clients you understand AI cost management.
@@ -406,7 +413,7 @@ const { messages, setMessages, ... } = useChat();
 
 ### Phase 6: Component Extraction (Optional but Recommended)
 
-Once Phase 5 works, refactor into components. This shows code organisation skills to Upwork clients reviewing your repo.
+With Phase 5 in place, refactor into components. This shows code organisation skills to Upwork clients reviewing your repo.
 
 - `components/ChatMessage.tsx` — single message bubble with role styling and copy button
 - `components/MessageList.tsx` — scrollable list of messages + suggested prompts empty state
@@ -454,7 +461,8 @@ Trigger a new deployment after adding the env var. The env var is not available 
 | File | Purpose |
 |------|---------|
 | `app/api/chat/route.ts` | Chat API endpoint — calls Claude with streaming |
-| `app/page.tsx` | Main chat page with `useChat`, multiline composer, empty-state prompts |
+| `app/globals.css` | Tailwind entry + **`@tailwindcss/typography`** plugin for `prose` |
+| `app/page.tsx` | Main chat page: `useChat`, multiline composer, empty-state prompts, markdown + copy (Phase 5) |
 | `components/ChatMessage.tsx` | Single message bubble (after refactor) |
 | `components/ChatInput.tsx` | Input form (after refactor) |
 | `components/MessageList.tsx` | Message list + empty state (after refactor) |
@@ -503,6 +511,8 @@ Building it is half the work. Showcasing it well is the other half.
 | CORS errors | Next.js API routes are same-origin. Only relevant if frontend and backend are on separate domains. |
 | Rate limit errors | Add a user-friendly error message. Handle 429 status in the catch block. |
 | Vercel env var not found in production | Trigger a new deployment after adding the env var in Vercel dashboard. |
+| **Assistant reply cuts off** mid-code or mid-sentence | Likely hit **`maxOutputTokens`** — increase the value in [`app/api/chat/route.ts`](app/api/chat/route.ts) (see §3.2). |
+| **Markdown code block** stretches the layout / scrollbar “escapes” the bubble | Ensure flex ancestors use **`min-w-0`**, bubbles use **`max-w-full overflow-hidden`**, and fenced **`pre`** is wrapped in **`overflow-x-auto`** (see Phase 5 checked-in [`app/page.tsx`](app/page.tsx)). |
 
 ---
 
@@ -512,9 +522,10 @@ Building it is half the work. Showcasing it well is the other half.
 # Create project (from parent directory)
 pnpm create next-app@latest ai-chat-portfolio --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*" --use-pnpm
 
-# Install dependencies (AI + optional markdown)
+# Install dependencies (AI + markdown + Tailwind Typography for prose)
 pnpm add ai @ai-sdk/anthropic react-markdown
 pnpm add @ai-sdk/react
+pnpm add -D @tailwindcss/typography
 
 # Run dev server
 pnpm dev
