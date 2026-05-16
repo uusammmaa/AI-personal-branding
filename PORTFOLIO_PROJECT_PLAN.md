@@ -1,6 +1,16 @@
 # AI Chat Assistant
 ### Upwork Portfolio Project — Stage 1
-**Next.js · Claude API · TypeScript · Tailwind CSS**
+**Next.js · Claude API · TypeScript · Tailwind CSS · pnpm**
+
+---
+
+## This repository (starter status)
+
+This folder is the **ai-chat-portfolio** Next.js app. It was scaffolded with **pnpm**, **Next.js 16** (App Router), **React 19**, **Tailwind CSS 4**, and **ESLint**. Phase 1 dependencies **`ai`** (v6) and **`@ai-sdk/anthropic`** (v3) are already in `package.json`. **`.env.example`** and **`.env.local`** (placeholder key) exist; put your real key only in `.env.local`.
+
+If you cloned this repo, **skip Phase 1.1–1.2** unless you are reproducing the setup from scratch. Use **`pnpm dev`** / **`pnpm run build`** (not `npm`) so the lockfile stays consistent.
+
+Implementation details for chat (`streamText`, streaming `Response`, `useChat`) change between **AI SDK** major versions. This repo pins **v6** — when Phases 2–3 diverge from the snippets below, follow the official docs: [AI SDK](https://ai-sdk.dev/docs).
 
 ---
 
@@ -78,7 +88,7 @@ messages: [
 ]
 ```
 
-The `useChat` hook from the Vercel AI SDK manages this array automatically. Understanding it manually helps you debug and extend it later.
+The `useChat` hook from the Vercel AI SDK (React package **`@ai-sdk/react`** in v6) manages this array automatically. Understanding it manually helps you debug and extend it later.
 
 ### 3.4 System Prompt
 
@@ -96,8 +106,9 @@ Without streaming: the user waits for the entire response to be generated, then 
 
 | Layer | Technology | Why This Choice |
 |-------|------------|-----------------|
-| **Framework** | Next.js 14+ (App Router) | You already know it. API routes = backend built-in. No separate server needed. |
-| **AI SDK** | `@ai-sdk/anthropic` + `ai` (Vercel AI SDK) | Handles streaming, `useChat` hook, and message formatting out of the box |
+| **Framework** | Next.js 16+ (App Router) | API routes = backend built-in. No separate server needed. |
+| **Package manager** | pnpm | Fast installs, strict `node_modules` layout; this repo uses a `pnpm-lock.yaml`. |
+| **AI SDK** | `@ai-sdk/anthropic` + `ai` (Vercel AI SDK v6) | Streaming, chat UI patterns, and provider calls — check docs for v6 APIs |
 | **Model** | `claude-3-5-sonnet-20241022` | Best balance of speed, quality, and cost for a portfolio chatbot |
 | **Styling** | Tailwind CSS | Fast, consistent, already in your Next.js setup |
 | **State** | `useChat` hook (in-memory) | Manages message history automatically |
@@ -110,6 +121,7 @@ Without streaming: the user waits for the entire response to be generated, then 
 ## 5. Prerequisites
 
 - Node.js 18 or higher installed
+- **pnpm** — install via [pnpm.io/installation](https://pnpm.io/installation) or `corepack enable` + `corepack prepare pnpm@latest --activate`
 - Anthropic API key — get one at [console.anthropic.com](https://console.anthropic.com)
 - Vercel account (free) for deployment
 - Basic familiarity with Next.js App Router and TypeScript
@@ -141,22 +153,25 @@ Understanding the data flow before you build it makes the code make sense.
 
 ### Phase 1: Project Setup
 
-**1.1 — Initialise Next.js**
+**1.1 — Initialise Next.js** (skip if you already have this repo)
+
+From the **parent** directory if you want a new sibling folder named `ai-chat-portfolio`:
 
 ```bash
-npx create-next-app@latest ai-chat-portfolio --typescript --tailwind --eslint --app --src-dir=false --import-alias="@/*"
+pnpm create next-app@latest ai-chat-portfolio --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*" --use-pnpm
 cd ai-chat-portfolio
 ```
 
 **1.2 — Install AI dependencies**
 
 ```bash
-npm install ai @ai-sdk/anthropic
+pnpm add ai @ai-sdk/anthropic
 ```
 
 What these packages do:
-- `ai` — Vercel AI SDK core. Provides `useChat` hook and `streamText` utility
+- `ai` — Vercel AI SDK core (`streamText`, streaming helpers, transports)
 - `@ai-sdk/anthropic` — Anthropic provider for the Vercel AI SDK
+- **`@ai-sdk/react`** (add when you build the UI: `pnpm add @ai-sdk/react`) — React hooks such as `useChat` in AI SDK v6
 
 **1.3 — Create environment file**
 
@@ -168,11 +183,28 @@ ANTHROPIC_API_KEY=sk-ant-your-api-key-here
 
 **1.4 — Verify .gitignore**
 
-Open `.gitignore` and confirm `.env.local` is listed. It usually is by default in Next.js projects.
+Open `.gitignore` and confirm secret env files are ignored. The default Next template often has `.env*`, which would also ignore **`.env.example`** — add a negation rule so the example can be committed:
+
+```gitignore
+.env*
+!.env.example
+```
+
+**1.5 — Git remote (first push to GitHub)**
+
+`create-next-app` initializes a local repo only. If `git push` says **no configured push destination**, create a repository on GitHub, then:
+
+```bash
+git remote add origin https://github.com/<your-username>/<your-repo>.git
+git branch -M main
+git push -u origin main
+```
 
 ---
 
 ### Phase 2: API Route (Backend)
+
+**AI SDK v6:** Older articles use `maxTokens` and `toDataStreamResponse()`. In **`ai` v6**, prefer **`maxOutputTokens`** and the streaming **`Response`** helpers described in the [AI SDK reference](https://ai-sdk.dev/docs) (names differ by pattern: UI message stream vs plain text stream). The snippet below keeps the **original teaching shape**; adjust field and method names to match your installed major version.
 
 This is where your Next.js backend calls the Claude API. Read the comments in the code — they explain each decision.
 
@@ -193,10 +225,10 @@ export async function POST(req: Request) {
         GitHub profiles, resume tailoring, and thought leadership.
         Be concise, actionable, and specific to software engineering.`,
       messages,
-      maxTokens: 1024,
+      maxOutputTokens: 1024,
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response(
@@ -212,6 +244,8 @@ export async function POST(req: Request) {
 ---
 
 ### Phase 3: Chat UI
+
+**AI SDK v6:** Chat hooks live in **`@ai-sdk/react`** (`pnpm add @ai-sdk/react`). The example below still imports **`ai/react`**, which applied to older AI SDK majors. Rebuild this page using the current [**useChat** / chatbot guide](https://ai-sdk.dev/docs) so imports, message shape, and handlers match v6.
 
 **Create `app/page.tsx`**
 
@@ -297,7 +331,7 @@ const SUGGESTED_PROMPTS = [
 **Markdown rendering**
 
 ```bash
-npm install react-markdown
+pnpm add react-markdown
 ```
 
 ```tsx
@@ -340,7 +374,7 @@ Once Phase 5 works, refactor into components. This shows code organisation skill
 **7.1 — Deploy to Vercel**
 
 ```bash
-npm i -g vercel
+pnpm add -g vercel
 vercel
 ```
 
@@ -391,7 +425,7 @@ Building it is half the work. Showcasing it well is the other half.
 
 ### 10.1 — GitHub README Must-Haves
 
-- Tech stack badges (Next.js, Tailwind, Claude, TypeScript, Vercel)
+- Tech stack badges (Next.js, Tailwind, Claude, TypeScript, Vercel, **pnpm**)
 - Live demo link at the top — above everything else
 - `.env.example` with placeholder key so reviewers can run it locally
 - 2–3 screenshots: desktop view, streaming in progress, mobile view
@@ -415,8 +449,10 @@ Building it is half the work. Showcasing it well is the other half.
 
 | Issue | Solution |
 |-------|---------|
+| `git push` → **No configured push destination** | Add a remote: `git remote add origin <repo-url>` then `git push -u origin main` (see Phase 1.5). |
+| **Another next dev server is already running** / port conflict | Only one `next dev` per project directory. Stop the other terminal or `taskkill /PID <pid> /F` (Windows) / `kill <pid>` (macOS/Linux). |
 | `ANTHROPIC_API_KEY` not found | Ensure `.env.local` exists in project root (not `src/`). Restart dev server after creating it. |
-| Streaming not working | Verify API route returns `toDataStreamResponse()`. Check `useChat` uses correct `api` path (`/api/chat`). |
+| Streaming not working | Confirm the API route returns a streaming **`Response`** compatible with your client transport (see AI SDK v6 docs). Check the chat hook targets `/api/chat`. |
 | Messages not persisting on refresh | Expected — in-memory only for Stage 1. Intentional for simplicity. |
 | CORS errors | Next.js API routes are same-origin. Only relevant if frontend and backend are on separate domains. |
 | Rate limit errors | Add a user-friendly error message. Handle 429 status in the catch block. |
@@ -427,19 +463,21 @@ Building it is half the work. Showcasing it well is the other half.
 ## 12. Quick Reference Commands
 
 ```bash
-# Create project
-npx create-next-app@latest ai-chat-portfolio --typescript --tailwind --eslint --app --src-dir=false
+# Create project (from parent directory)
+pnpm create next-app@latest ai-chat-portfolio --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*" --use-pnpm
 
-# Install dependencies
-npm install ai @ai-sdk/anthropic react-markdown
+# Install dependencies (AI + optional markdown)
+pnpm add ai @ai-sdk/anthropic react-markdown
+pnpm add @ai-sdk/react
 
 # Run dev server
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm run build
 
-# Deploy to Vercel
+# Deploy to Vercel (global CLI)
+pnpm add -g vercel
 vercel
 ```
 

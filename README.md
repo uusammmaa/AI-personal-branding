@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Chat Assistant — Portfolio (Stage 1)
 
-## Getting Started
+Personal-branding chatbot for software engineers: Next.js + Anthropic Claude (streaming), built as an Upwork portfolio piece.
 
-First, run the development server:
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![pnpm](https://img.shields.io/badge/pnpm-package%20manager-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Claude](https://img.shields.io/badge/Claude-Anthropic-D4A574)](https://www.anthropic.com/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tech stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Layer | Choice |
+|--------|--------|
+| App | Next.js 16 (App Router), React 19, TypeScript |
+| Styling | Tailwind CSS 4 |
+| AI | [`ai`](https://sdk.vercel.ai/docs) (Vercel AI SDK v6), [`@ai-sdk/anthropic`](https://sdk.vercel.ai/providers/ai-sdk-providers/anthropic) |
+| Package manager | **pnpm** (see `pnpm-lock.yaml`) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [Node.js](https://nodejs.org/) 18+
+- [pnpm](https://pnpm.io/installation)
+- [Anthropic API key](https://console.anthropic.com/)
 
-## Learn More
+## Local setup
 
-To learn more about Next.js, take a look at the following resources:
+1. **Install dependencies**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   pnpm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Environment variables**
 
-## Deploy on Vercel
+   Copy the example file and add your key (never commit real secrets):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```bash
+   cp .env.example .env.local
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   Edit `.env.local` and set `ANTHROPIC_API_KEY`. Restart the dev server after changes.
+
+3. **Run the dev server**
+
+   ```bash
+   pnpm dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000). Only one `next dev` instance should run per project folder; if the port is busy, stop the other process first.
+
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `pnpm dev` | Development server (Turbopack) |
+| `pnpm run build` | Production build |
+| `pnpm start` | Serve the production build |
+| `pnpm lint` | ESLint |
+
+## Build guide
+
+Step-by-step phases (API route, streaming chat UI, polish, Vercel) live in **[PORTFOLIO_PROJECT_PLAN.md](./PORTFOLIO_PROJECT_PLAN.md)**.
+
+## Deploy (Vercel)
+
+1. Push the repo to GitHub and import it in [Vercel](https://vercel.com/).
+2. Add **`ANTHROPIC_API_KEY`** under Project → Settings → Environment Variables (Production and Preview).
+3. Redeploy so new variables are picked up.
+
+---
+
+Scaffolded with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) using **pnpm**.
