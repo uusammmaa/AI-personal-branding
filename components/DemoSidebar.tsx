@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 const NAV = [
   {
     href: "/",
-    label: "Portfolio",
-    description: "Jezerox landing & contact",
+    label: "Home",
+    description: "Back to portfolio & contact",
   },
   { href: "/coach", label: "Coach", description: "Next.js + streaming LLM" },
   {
