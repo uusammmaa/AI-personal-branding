@@ -42,7 +42,7 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="relative flex min-h-svh flex-col">
+    <div className="relative flex h-svh min-h-0 flex-col overflow-hidden">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="mesh-blobs mesh-blobs--subtle h-full w-full"
