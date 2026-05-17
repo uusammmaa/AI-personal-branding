@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, MenuIcon } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
 
 import { DemoNavLinks } from "@/components/DemoNavLinks";
 import { DemoSidebar } from "@/components/DemoSidebar";
@@ -18,23 +17,10 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function DemoMain({ children }: { children: React.ReactNode }) {
-  const reduceMotion = useReducedMotion();
-  if (reduceMotion) {
-    return (
-      <main className="font-body min-h-0 min-w-0 flex-1 overflow-y-auto">
-        {children}
-      </main>
-    );
-  }
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-      className="font-body min-h-0 min-w-0 flex-1 overflow-y-auto"
-    >
+    <main className="font-body min-h-0 min-w-0 flex-1 overflow-y-auto">
       {children}
-    </motion.main>
+    </main>
   );
 }
 
