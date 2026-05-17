@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
 import type { UIMessage } from "ai";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChatInput } from "@/components/ChatInput";
 import { FileUpload } from "@/components/FileUpload";
 import { MessageList } from "@/components/MessageList";
@@ -21,6 +21,14 @@ function textFromUserMessage(message: UIMessage): string {
 }
 
 export default function RagPage() {
+  const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [uploadKey, setUploadKey] = useState(0);
+  const activeDocIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeDocIdRef.current = activeDocId;
+  }, [activeDocId]);
+
   const transport = useMemo(
     () =>
       new TextStreamChatTransport({
@@ -30,7 +38,12 @@ export default function RagPage() {
             .reverse()
             .find((m) => m.role === "user");
           const question = lastUser ? textFromUserMessage(lastUser) : "";
-          return { body: { question } };
+          return {
+            body: {
+              question,
+              doc_id: activeDocIdRef.current ?? "",
+            },
+          };
         },
       }),
     [],
@@ -59,7 +72,11 @@ export default function RagPage() {
         {messages.length > 0 && (
           <button
             type="button"
-            onClick={() => setMessages([])}
+            onClick={() => {
+              setMessages([]);
+              setActiveDocId(null);
+              setUploadKey((k) => k + 1);
+            }}
             className="shrink-0 text-sm text-gray-500 transition-colors hover:text-gray-800 dark:hover:text-gray-200"
           >
             New Chat
@@ -67,11 +84,15 @@ export default function RagPage() {
         )}
       </header>
 
-      <FileUpload />
+      <FileUpload
+        key={uploadKey}
+        onIndexed={(doc) => setActiveDocId(doc.doc_id)}
+      />
 
       <MessageList
         messages={messages}
         isLoading={isLoading}
+        suggestionsDisabled={!activeDocId}
         onSendText={(text) => sendMessage({ text })}
       />
 
@@ -80,7 +101,12 @@ export default function RagPage() {
         onChange={setInput}
         onSend={submitMessage}
         isLoading={isLoading}
-        placeholder="Ask a question about your uploaded documents… (Enter to send, Shift+Enter for new line)"
+        disabled={!activeDocId}
+        placeholder={
+          activeDocId
+            ? "Ask a question about your uploaded document… (Enter to send, Shift+Enter for new line)"
+            : "Upload a PDF above, then ask a question…"
+        }
       />
     </div>
   );

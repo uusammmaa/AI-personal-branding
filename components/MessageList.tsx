@@ -16,11 +16,14 @@ export function MessageList({
   isLoading,
   onSendText,
   suggestedPrompts = DEFAULT_SUGGESTED_PROMPTS,
+  suggestionsDisabled = false,
 }: {
   messages: UIMessage[];
   isLoading: boolean;
   onSendText: (text: string) => void;
   suggestedPrompts?: string[];
+  /** When true, suggested prompts cannot be sent (e.g. no active document). */
+  suggestionsDisabled?: boolean;
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -39,7 +42,7 @@ export function MessageList({
             <button
               key={prompt}
               type="button"
-              disabled={isLoading}
+              disabled={isLoading || suggestionsDisabled}
               onClick={() => onSendText(prompt)}
               className="p-3 text-left border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >

@@ -5,7 +5,17 @@ import { useState } from "react";
 const apiBase =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export function FileUpload() {
+export type IndexedDocument = {
+  doc_id: string;
+  filename: string;
+  chunks: number;
+};
+
+export function FileUpload({
+  onIndexed,
+}: {
+  onIndexed?: (doc: IndexedDocument) => void;
+} = {}) {
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<{
     filename: string;
@@ -47,11 +57,21 @@ export function FileUpload() {
       }
 
       const data = JSON.parse(raw) as {
+        doc_id?: string;
         filename?: string;
         chunks?: number;
       };
-      if (typeof data.filename === "string" && typeof data.chunks === "number") {
+      if (
+        typeof data.doc_id === "string" &&
+        typeof data.filename === "string" &&
+        typeof data.chunks === "number"
+      ) {
         setResult({ filename: data.filename, chunks: data.chunks });
+        onIndexed?.({
+          doc_id: data.doc_id,
+          filename: data.filename,
+          chunks: data.chunks,
+        });
       } else {
         setError("Unexpected response from server");
       }
