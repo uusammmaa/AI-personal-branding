@@ -92,3 +92,10 @@
     opacity: 0.22;
   }
 }
+
+/* Demo shell — softer than marketing hero */
+.mesh-blobs.mesh-blobs--subtle::before,
+.mesh-blobs.mesh-blobs--subtle::after {
+  opacity: 0.2;
+  filter: blur(72px);
+}

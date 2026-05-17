@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { VectorStoreId } from "@/lib/vector-store";
 
 const apiBase =
@@ -90,34 +98,37 @@ export function FileUpload({
   }
 
   return (
-    <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-      <label
-        htmlFor="rag-pdf-upload"
-        className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-100"
-      >
-        Upload a PDF document
-      </label>
-      <input
-        id="rag-pdf-upload"
-        type="file"
-        accept=".pdf,application/pdf"
-        onChange={(e) => void handleUpload(e)}
-        disabled={uploading}
-        className="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-blue-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-blue-700 disabled:opacity-50 dark:text-gray-300"
-      />
-      {uploading && (
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Processing…
-        </p>
-      )}
-      {error && (
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
-      )}
-      {result && (
-        <p className="mt-2 text-sm text-green-700 dark:text-green-400">
-          {result.filename} — {result.chunks} chunks indexed
-        </p>
-      )}
-    </div>
+    <Card size="sm" className="mb-4 border-border/60 bg-card/50">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Upload a PDF document</CardTitle>
+        <CardDescription>
+          Index the file before asking questions in the chat below.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <input
+          id="rag-pdf-upload"
+          type="file"
+          accept=".pdf,application/pdf"
+          onChange={(e) => void handleUpload(e)}
+          disabled={uploading}
+          className={cn(
+            "block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground",
+            "hover:file:bg-primary/90 disabled:opacity-50",
+          )}
+        />
+        {uploading && (
+          <p className="mt-2 text-sm text-muted-foreground">Processing…</p>
+        )}
+        {error && (
+          <p className="mt-2 text-sm text-destructive">{error}</p>
+        )}
+        {result && (
+          <p className="mt-2 text-sm text-primary">
+            {result.filename} — {result.chunks} chunks indexed
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -2,6 +2,9 @@
 
 import { type FormEvent, type KeyboardEvent } from "react";
 
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
 const DEFAULT_PLACEHOLDER =
   "Message… (Enter to send, Shift+Enter for new line)";
 
@@ -33,23 +36,28 @@ export function ChatInput({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2 items-end">
+    <form onSubmit={handleSubmit} className="flex items-end gap-2">
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         rows={3}
-        className="flex-1 min-h-18 max-h-48 resize-y py-3 px-3 border rounded-lg bg-white dark:bg-gray-900 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        className={cn(
+          "min-h-18 max-h-48 flex-1 resize-y rounded-lg border border-border bg-card px-3 py-3 text-sm text-foreground shadow-sm outline-none transition-[box-shadow,border-color]",
+          "placeholder:text-muted-foreground",
+          "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+        )}
         disabled={isLoading || disabled}
       />
-      <button
+      <Button
         type="submit"
         disabled={isLoading || disabled || !value.trim()}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="shrink-0 self-end"
       >
         Send
-      </button>
+      </Button>
     </form>
   );
 }

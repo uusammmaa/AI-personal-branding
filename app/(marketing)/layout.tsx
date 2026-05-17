@@ -1,20 +1,11 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, DM_Sans } from "next/font/google";
 import { MarketingProviders } from "@/components/marketing/marketing-providers";
+import {
+  marketingFontVariableClassName,
+  marketingRootClassName,
+} from "@/lib/marketing-fonts";
+import { cn } from "@/lib/utils";
 import "./marketing.css";
-
-const bebas = Bebas_Neue({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-bebas",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
@@ -100,7 +91,10 @@ export default function MarketingLayout({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <div
-        className={`marketing-root dark min-h-svh bg-background text-foreground antialiased ${bebas.variable} ${dmSans.variable} font-body`}
+        className={cn(
+          marketingRootClassName,
+          marketingFontVariableClassName,
+        )}
       >
         <MarketingProviders>{children}</MarketingProviders>
       </div>

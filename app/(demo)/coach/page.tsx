@@ -2,13 +2,16 @@
 
 import { useChat } from "@ai-sdk/react";
 import { useState } from "react";
+
 import { ChatInput } from "@/components/ChatInput";
 import { MessageList } from "@/components/MessageList";
+import { Button } from "@/components/ui/button";
 import {
   CHAT_MODELS,
   DEFAULT_CHAT_MODEL_ID,
   type ChatModelId,
 } from "@/lib/chat-models";
+import { cn } from "@/lib/utils";
 
 const COACH_SUGGESTED_PROMPTS = [
   "Help me write a compelling LinkedIn headline",
@@ -34,16 +37,24 @@ export default function CoachPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full max-w-2xl flex-col mx-auto p-4">
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-          <h1 className="shrink-0 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Personal Branding Assistant
-          </h1>
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="sr-only">Model</span>
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col px-4 py-6 md:px-8 md:py-8">
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-display text-3xl tracking-wide text-foreground md:text-4xl">
+              Personal Branding Assistant
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Streaming coach powered by your configured models.
+            </p>
+          </div>
+          <label className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
+            <span className="whitespace-nowrap">Model</span>
             <select
-              className="max-w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-gray-900 shadow-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+              className={cn(
+                "max-w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none",
+                "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
+              )}
               value={selectedModel}
               disabled={isLoading}
               onChange={(e) =>
@@ -59,13 +70,15 @@ export default function CoachPage() {
           </label>
         </div>
         {messages.length > 0 && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setMessages([])}
-            className="shrink-0 text-sm text-gray-500 transition-colors hover:text-gray-800 dark:hover:text-gray-200"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             New Chat
-          </button>
+          </Button>
         )}
       </header>
 
