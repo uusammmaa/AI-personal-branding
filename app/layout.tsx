@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Personal Branding Assistant",
-  description: "AI-powered personal branding coach for software engineers",
+  title: "AI Chat Demo",
+  description: "Coach chat (Next.js) and document Q&A (FastAPI RAG)",
 };
 
 export default function RootLayout({

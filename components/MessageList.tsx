@@ -4,21 +4,23 @@ import type { UIMessage } from "ai";
 import { useEffect, useRef } from "react";
 import { ChatMessage } from "./ChatMessage";
 
-const SUGGESTED_PROMPTS = [
-  "Help me write a compelling LinkedIn headline",
-  "Review my GitHub profile and suggest improvements",
-  "Suggest 3 portfolio project ideas to showcase my skills",
-  "How do I position myself for remote senior dev roles?",
+const DEFAULT_SUGGESTED_PROMPTS = [
+  "What are the main topics covered in this document?",
+  "Summarize the key conclusions in a few bullet points",
+  "What definitions or terms are explained in the PDF?",
+  "Are there any action items or recommendations listed?",
 ];
 
 export function MessageList({
   messages,
   isLoading,
   onSendText,
+  suggestedPrompts = DEFAULT_SUGGESTED_PROMPTS,
 }: {
   messages: UIMessage[];
   isLoading: boolean;
   onSendText: (text: string) => void;
+  suggestedPrompts?: string[];
 }) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,7 @@ export function MessageList({
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Try asking:
           </p>
-          {SUGGESTED_PROMPTS.map((prompt) => (
+          {suggestedPrompts.map((prompt) => (
             <button
               key={prompt}
               type="button"

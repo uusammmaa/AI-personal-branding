@@ -2,16 +2,21 @@
 
 import { type FormEvent, type KeyboardEvent } from "react";
 
+const DEFAULT_PLACEHOLDER =
+  "Message… (Enter to send, Shift+Enter for new line)";
+
 export function ChatInput({
   value,
   onChange,
   onSend,
   isLoading,
+  placeholder = DEFAULT_PLACEHOLDER,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
   isLoading: boolean;
+  placeholder?: string;
 }) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -30,7 +35,7 @@ export function ChatInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask about your personal brand... (Enter to send, Shift+Enter for new line)"
+        placeholder={placeholder}
         rows={3}
         className="flex-1 min-h-18 max-h-48 resize-y py-3 px-3 border rounded-lg bg-white dark:bg-gray-900 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         disabled={isLoading}

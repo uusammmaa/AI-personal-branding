@@ -63,8 +63,6 @@ export async function POST(req: Request) {
       messages: await convertToModelMessages(
         messages as Parameters<typeof convertToModelMessages>[0],
       ),
-      // GPT-5 family uses internal reasoning; default "medium" + low cap can
-      // consume the whole budget with no visible answer text.
       ...(config.provider === "openai"
         ? {
             maxOutputTokens: 4096,
