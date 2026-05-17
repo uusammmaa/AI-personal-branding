@@ -4,6 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV = [
+  {
+    href: "/",
+    label: "Portfolio",
+    description: "Jezerox landing & contact",
+  },
   { href: "/coach", label: "Coach", description: "Next.js + streaming LLM" },
   {
     href: "/rag",
@@ -32,7 +37,10 @@ export function DemoSidebar() {
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-2">
         {NAV.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}

@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
 import type { UIMessage } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChatInput } from "@/components/ChatInput";
 import { FileUpload } from "@/components/FileUpload";
 import { MessageList } from "@/components/MessageList";
@@ -32,16 +32,6 @@ export function RagDemoPanel({
 }) {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [uploadKey, setUploadKey] = useState(0);
-  const activeDocIdRef = useRef<string | null>(null);
-  const vectorStoreRef = useRef(vectorStore);
-
-  useEffect(() => {
-    activeDocIdRef.current = activeDocId;
-  }, [activeDocId]);
-
-  useEffect(() => {
-    vectorStoreRef.current = vectorStore;
-  }, [vectorStore]);
 
   const transport = useMemo(
     () =>
@@ -55,13 +45,13 @@ export function RagDemoPanel({
           return {
             body: {
               question,
-              doc_id: activeDocIdRef.current ?? "",
-              vector_store: vectorStoreRef.current,
+              doc_id: activeDocId ?? "",
+              vector_store: vectorStore,
             },
           };
         },
       }),
-    [],
+    [activeDocId, vectorStore],
   );
 
   const { messages, sendMessage, status, setMessages } = useChat({
