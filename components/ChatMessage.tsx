@@ -81,18 +81,39 @@ export function ChatMessage({ message: m }: { message: UIMessage }) {
         </div>
       ) : (
         <div className="mt-1 min-w-0 w-full max-w-full prose prose-sm prose-neutral dark:prose-invert [&_p]:wrap-break-word [&_a]:wrap-break-word [&_pre]:m-0 [&_pre]:bg-transparent [&_pre]:p-0 [&_pre]:shadow-none">
-          {m.parts
-            .filter(
-              (p): p is { type: "text"; text: string } => p.type === "text",
-            )
-            .map((p, i) => (
-              <ReactMarkdown
-                key={`${m.id}-${i}`}
-                components={assistantMarkdownComponents}
-              >
-                {p.text}
-              </ReactMarkdown>
-            ))}
+          {m.parts.map((p, i) => {
+            if (p.type === "text") {
+              return (
+                <ReactMarkdown
+                  key={`${m.id}-t-${i}`}
+                  components={assistantMarkdownComponents}
+                >
+                  {p.text}
+                </ReactMarkdown>
+              );
+            }
+            if (
+              p.type === "reasoning" &&
+              "text" in p &&
+              typeof p.text === "string" &&
+              p.text.trim().length > 0
+            ) {
+              return (
+                <details
+                  key={`${m.id}-r-${i}`}
+                  className="not-prose my-2 rounded-md border border-gray-200 bg-gray-50/80 p-2 text-xs text-gray-600 dark:border-gray-600 dark:bg-gray-900/50 dark:text-gray-400"
+                >
+                  <summary className="cursor-pointer font-medium text-gray-700 dark:text-gray-300">
+                    Model reasoning
+                  </summary>
+                  <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap wrap-break-word font-sans">
+                    {p.text}
+                  </pre>
+                </details>
+              );
+            }
+            return null;
+          })}
         </div>
       )}
     </div>
