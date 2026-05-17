@@ -4,14 +4,10 @@ import { useChat } from "@ai-sdk/react";
 import { useState } from "react";
 
 import { ChatInput } from "@/components/ChatInput";
+import { ChatModelSelect } from "@/components/ChatModelSelect";
 import { MessageList } from "@/components/MessageList";
 import { Button } from "@/components/ui/button";
-import {
-  CHAT_MODELS,
-  DEFAULT_CHAT_MODEL_ID,
-  type ChatModelId,
-} from "@/lib/chat-models";
-import { cn } from "@/lib/utils";
+import { DEFAULT_CHAT_MODEL_ID, type ChatModelId } from "@/lib/chat-models";
 
 const COACH_SUGGESTED_PROMPTS = [
   "Help me write a compelling LinkedIn headline",
@@ -50,23 +46,11 @@ export default function CoachPage() {
           </div>
           <label className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
             <span className="whitespace-nowrap">Model</span>
-            <select
-              className={cn(
-                "max-w-full rounded-lg border border-border bg-card px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none",
-                "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
-              )}
+            <ChatModelSelect
               value={selectedModel}
+              onChange={setSelectedModel}
               disabled={isLoading}
-              onChange={(e) =>
-                setSelectedModel(e.target.value as ChatModelId)
-              }
-            >
-              {CHAT_MODELS.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
+            />
           </label>
         </div>
         {messages.length > 0 && (
