@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import type { VectorStoreId } from "@/lib/vector-store";
+
 const apiBase =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -12,8 +14,10 @@ export type IndexedDocument = {
 };
 
 export function FileUpload({
+  vectorStore,
   onIndexed,
 }: {
+  vectorStore?: VectorStoreId;
   onIndexed?: (doc: IndexedDocument) => void;
 } = {}) {
   const [uploading, setUploading] = useState(false);
@@ -34,6 +38,9 @@ export function FileUpload({
 
     const formData = new FormData();
     formData.append("file", file);
+    if (vectorStore) {
+      formData.append("vector_store", vectorStore);
+    }
 
     try {
       const res = await fetch(`${apiBase}/upload`, {

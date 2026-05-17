@@ -5,7 +5,16 @@ import { usePathname } from "next/navigation";
 
 const NAV = [
   { href: "/coach", label: "Coach", description: "Next.js + streaming LLM" },
-  { href: "/rag", label: "Document Q&A", description: "FastAPI RAG + PDF upload" },
+  {
+    href: "/rag",
+    label: "RAG — Pinecone",
+    description: "FastAPI RAG + PDF + Pinecone",
+  },
+  {
+    href: "/rag-supabase",
+    label: "RAG — Supabase",
+    description: "Same pipeline + pgvector in Postgres",
+  },
 ] as const;
 
 export function DemoSidebar() {
