@@ -37,7 +37,7 @@ export default function CoachPage() {
   }
 
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-3xl flex-col px-4 py-6 md:px-8 md:py-8">
+    <div className="flex h-full min-h-0 w-full flex-col px-4 py-6 md:px-8 md:py-8">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
