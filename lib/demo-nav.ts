@@ -15,4 +15,9 @@ export const DEMO_NAV = [
     label: "RAG — Supabase",
     description: "Same pipeline + pgvector in Postgres",
   },
+  {
+    href: "/agent",
+    label: "Research Agent",
+    description: "FastAPI agent + tool use + streaming steps",
+  },
 ] as const;
